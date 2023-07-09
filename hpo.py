@@ -12,9 +12,18 @@ import argparse
 
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+import logging
+import sys
+
+
+logger=logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Initialize a model
 def net():
+    logger.info("Initializing the network.")
+
     model = models.resnet18(pretrained=True)
     num_ftrs = model.fc.in_features
     model.fc = nn.Sequential(nn.Linear(num_ftrs, 133))
@@ -23,6 +32,7 @@ def net():
 
 # Training function
 def train(model, train_loader, criterion, optimizer, device):
+    logger.info("Training the network.")
     model.train() 
     try:
         for inputs, labels in train_loader:
@@ -40,7 +50,7 @@ def train(model, train_loader, criterion, optimizer, device):
             loss.backward()
             optimizer.step()
     except Exception as e:
-        print("Exception occurred during training: ", e)
+        logger.error("Exception occurred during training: ", exc_info=True)
         raise e
 
 
@@ -60,7 +70,9 @@ def test(model, test_loader, device):
             correct += (predicted == labels).sum().item()
     return 100 * correct / total
 
+
 def validate(model, val_loader, criterion, device):
+    logger.info("Validating the network.")
     model.eval()
     running_loss = 0.0
     with torch.no_grad():
@@ -71,8 +83,9 @@ def validate(model, val_loader, criterion, device):
             loss = criterion(outputs, labels)
             running_loss += loss.item()
     average_loss = running_loss / len(val_loader)
-    print("Validation Loss: {:.4f}".format(average_loss))
+    logger.info("Validation Loss: {:.4f}".format(average_loss))
     return average_loss
+
 
 
 
@@ -101,6 +114,9 @@ def main(args):
         
     # Initialize a model
     model = net()
+
+    logger.info("Defining the criterion and optimizer.")
+
     
     # Define the criterion and the optimizer
     criterion = nn.CrossEntropyLoss()
@@ -111,15 +127,20 @@ def main(args):
 
     
     for epoch in range(args.epochs):
+        logger.info("Epoch {}/{}".format(epoch+1, args.epochs))
         train(model, train_loader, criterion, optimizer, device)
         validate(model, val_loader, criterion, device)
 
     
     # Test the model
     accuracy = test(model, test_loader, device)
+    logger.info('Accuracy of the network on the test images: %d %%' % accuracy)
+
     print('Accuracy of the network on the test images: %d %%' % accuracy)
     
     # Save the trained model
+    logger.info("Saving the trained model.")
+
     torch.save(model, os.path.join(args.model_dir, 'model.pth'))
 
 

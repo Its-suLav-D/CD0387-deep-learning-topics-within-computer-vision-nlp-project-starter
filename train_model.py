@@ -16,9 +16,16 @@ import argparse
 #TODO: Import dependencies for Debugging andd Profiling
 from smdebug import modes
 import smdebug.pytorch as smd
+import logging
+
 
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger()
+
 
 def test(model, test_loader, criterion, hook):
     model.eval()
@@ -35,6 +42,7 @@ def test(model, test_loader, criterion, hook):
             
     test_loss /= len(test_loader.dataset)
     print(f'\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset):.0f}%)\n')
+    logger.info(f'Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({100. * correct / len(test_loader.dataset):.0f}%)')
 
 
 def train(epoch, model, train_loader, criterion, optimizer, hook):  # add 'epoch' as the first argument
@@ -49,7 +57,8 @@ def train(epoch, model, train_loader, criterion, optimizer, hook):  # add 'epoch
         optimizer.step()
         if batch_idx % 10 == 0:
             print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-    
+            logger.info(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
+
 def net():
     model = models.resnet18(pretrained=True)
     num_ftrs = model.fc.in_features
@@ -141,5 +150,8 @@ if __name__=='__main__':
     
     
     args=parser.parse_args()
+    
+    logger.info(f'Starting training with arguments: {args}')
+
     
     main(args)

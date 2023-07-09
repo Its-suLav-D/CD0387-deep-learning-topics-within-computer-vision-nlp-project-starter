@@ -17,17 +17,13 @@ JSON_CONTENT_TYPE = 'application/json'
 JPEG_CONTENT_TYPE = 'image/jpeg'
 
 
-# Based on https://github.com/pytorch/examples/blob/master/mnist/main.py
 def Net():
-    model = models.resnet50(pretrained=True)
+    model = models.resnet18(pretrained=True)
 
     for param in model.parameters():
         param.requires_grad = False   
 
-    model.fc = nn.Sequential(
-                   nn.Linear(2048, 128),
-                   nn.ReLU(inplace=True),
-                   nn.Linear(128, 133))
+    model.fc = nn.Sequential(nn.Linear(128, 133))
     return model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -77,7 +73,7 @@ def input_fn(request_body, content_type=JPEG_CONTENT_TYPE):
 def predict_fn(input_object, model):
     logger.info('In predict fn')
     test_transform = transforms.Compose([
-    transforms.Resize((225, 225)),
+    transforms.Resize((255, 255)),
     transforms.ToTensor(),
     ])
     logger.info("transforming input")
